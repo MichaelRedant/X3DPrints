@@ -81,5 +81,45 @@
             "total_price_with_btw": 26.55389810333333
         },
         "date": "2024-09-03 12:45:06"
+    },
+    {
+        "customer_name": "test",
+        "quote_data": {
+            "single": {
+                "filament_type": "PETG",
+                "filament_price_per_kg": 23.38,
+                "drying_cost": 5.0812,
+                "drying_electricity_cost": 1.84,
+                "electricity_price": 0.23,
+                "electricity_cost": 0.11883333333333335,
+                "filament_weight_grams": 2.2,
+                "printing_time_hours": 0.5166666666666667,
+                "delivery_cost": 7.0,
+                "design_cost": 0.0,
+                "design_hours": 0.0,
+                "netto_price": 1.8914360000000001,
+                "total_price": 21.137203999999997,
+                "btw": 4.438812839999999,
+                "total_price_with_btw": 25.576016839999994
+            },
+            "total": {
+                "filament_type": "PETG",
+                "filament_price_per_kg": 23.38,
+                "drying_cost": 16.368000000000002,
+                "drying_electricity_cost": 257.6,
+                "electricity_price": 0.23,
+                "electricity_cost": 0.11883333333333335,
+                "filament_weight_grams": 2.2,
+                "printing_time_hours": 0.5166666666666667,
+                "delivery_cost": 7.0,
+                "design_cost": 0.0,
+                "design_hours": 0.0,
+                "netto_price": 264.80104,
+                "total_price": 432.43181,
+                "btw": 90.8106801,
+                "total_price_with_btw": 523.2424900999999
+            }
+        },
+        "date": "2024-09-03 16:59:54"
     }
 ]
