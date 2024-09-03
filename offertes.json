@@ -39,5 +39,47 @@
             "total_price_with_btw": 16.513354
         },
         "date": "2024-09-03 11:18:02"
+    },
+    {
+        "customer_name": "Markt",
+        "quote_data": {
+            "filament_type": "PLA Matte",
+            "filament_price_per_kg": 23.38,
+            "drying_cost": 0,
+            "drying_electricity_cost": 0,
+            "electricity_price": 0.23,
+            "electricity_cost": 2.0738333333333334,
+            "filament_weight_grams": 210.96,
+            "printing_time_hours": 9.016666666666667,
+            "delivery_cost": 0,
+            "design_cost": 0.0,
+            "design_hours": 0.0,
+            "netto_price": 4.932244799999999,
+            "total_price": 21.018234399999997,
+            "btw": 4.413829224,
+            "total_price_with_btw": 25.432063623999998
+        },
+        "date": "2024-09-03 11:31:59"
+    },
+    {
+        "customer_name": "Tom",
+        "quote_data": {
+            "filament_type": "PLA Matte",
+            "filament_price_per_kg": 23.38,
+            "drying_cost": 0,
+            "drying_electricity_cost": 0,
+            "electricity_price": 0.23,
+            "electricity_cost": 0.04861944444444445,
+            "filament_weight_grams": 2.22,
+            "printing_time_hours": 0.2113888888888889,
+            "delivery_cost": 0,
+            "design_cost": 0.0,
+            "design_hours": 0.0,
+            "netto_price": 7.266504,
+            "total_price": 21.945370333333333,
+            "btw": 4.608527769999999,
+            "total_price_with_btw": 26.55389810333333
+        },
+        "date": "2024-09-03 12:45:06"
     }
 ]

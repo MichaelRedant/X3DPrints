@@ -1,7 +1,6 @@
 import os
 import tkinter as tk
-from tkinter import filedialog, messagebox, Toplevel, Listbox
-from tkinter import ttk  # Importeer ttk voor de widgets
+from tkinter import filedialog, messagebox, Toplevel, Listbox, ttk
 import json
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
@@ -10,18 +9,34 @@ import datetime
 import logging
 import webbrowser
 from utils import display_generated_quote
-from settings import settings  # Importeer settings
+from settings import settings
 
 # Bestand voor offertes
 OFFERS_FILE = "offertes.json"
 
-def validate_print_time(entry_print_hours, entry_print_minutes, entry_print_seconds):
-    """Controleert of ten minste één veld voor printtijd is ingevuld."""
-    return any([
-        entry_print_hours.get(),
-        entry_print_minutes.get(),
-        entry_print_seconds.get()
-    ])
+def show_frame(frame):
+    """Toon een specifiek frame en verberg de rest."""
+    for widget in frame.master.winfo_children():
+        widget.grid_remove()  # Verberg alle frames
+    frame.grid(row=0, column=0, sticky="nsew")  # Toon het geselecteerde frame
+
+def update_design_time_visibility(combo_design_choice, design_frame):
+    """Zorg ervoor dat het ontwerptijd-frame alleen zichtbaar is als 'Eigen ontwerp' is geselecteerd."""
+    if combo_design_choice.get() == "Eigen ontwerp":
+        design_frame.grid()
+    else:
+        design_frame.grid_remove()
+
+def update_delivery_related_fields(combo_delivery_type, travel_distance_label, entry_travel_distance, urgent_checkbox):
+    """Pas de zichtbaarheid van leveringsgerelateerde velden aan op basis van het geselecteerde leveringsoptie."""
+    if combo_delivery_type.get() in ["Zelf leveren", "Zelf leveren in spoed"]:
+        travel_distance_label.grid()
+        entry_travel_distance.grid()
+        urgent_checkbox.grid()
+    else:
+        travel_distance_label.grid_remove()
+        entry_travel_distance.grid_remove()
+        urgent_checkbox.grid_remove()
 
 def validate_fields(*fields):
     """Controleert of alle verplichte velden zijn ingevuld."""
@@ -80,19 +95,15 @@ def save_as_pdf(quote_data):
             logging.error(f"Fout bij het opslaan van de offerte als PDF: {e}")
             messagebox.showerror("Fout", f"Er is een fout opgetreden bij het opslaan van de offerte als PDF: {e}")
 
-def generate_quote(entry_print_hours, entry_print_minutes, entry_print_seconds, combo_filament_type, entry_filament_weight, entry_number_of_prints, combo_delivery_type, entry_design_hours, entry_design_minutes, entry_travel_distance, urgent_checkbox, result_frame):
+def generate_quote(entry_print_hours, entry_print_minutes, entry_print_seconds, combo_filament_type, entry_filament_weight, entry_number_of_prints, combo_delivery_type, entry_design_hours, entry_design_minutes, entry_travel_distance, urgent_checkbox, result_frame, multi_print=False):
     """Genereer een offerte gebaseerd op de invoer."""
     try:
         logging.info("Start van de generate_quote functie.")
         
         # Validatie van invoervelden
-        if not validate_print_time(entry_print_hours, entry_print_minutes, entry_print_seconds):
-            messagebox.showerror("Fout", "Vul ten minste één veld in voor de printtijd (uren, minuten of seconden).")
-            return
-        
-        fields_to_validate = [combo_filament_type, entry_filament_weight, entry_number_of_prints, combo_delivery_type]
+        fields_to_validate = [entry_print_hours, entry_print_minutes, entry_print_seconds, combo_filament_type, entry_filament_weight]
         if not validate_fields(*fields_to_validate):
-            messagebox.showerror("Fout", "Alle verplichte velden moeten worden ingevuld.")
+            messagebox.showerror("Fout", "Alle verplichte velden voor 1 print moeten worden ingevuld.")
             return
         
         printing_time_hours = (
@@ -102,7 +113,7 @@ def generate_quote(entry_print_hours, entry_print_minutes, entry_print_seconds, 
         )
         filament_type = combo_filament_type.get()
         filament_weight_grams = float(entry_filament_weight.get().replace(',', '.') or 0)
-        number_of_prints = int(entry_number_of_prints.get().replace(',', '.') or 0)
+        number_of_prints = int(entry_number_of_prints.get().replace(',', '.') or 1)  # Standaard naar 1 print
         delivery_type = combo_delivery_type.get()
         design_hours = (
             int(entry_design_hours.get() or 0) +
@@ -111,10 +122,20 @@ def generate_quote(entry_print_hours, entry_print_minutes, entry_print_seconds, 
         travel_distance_km = float(entry_travel_distance.get().replace(',', '.') or 0) if delivery_type in ["Zelf leveren", "Zelf leveren in spoed"] else 0
         urgent = urgent_checkbox.get() if delivery_type == "Zelf leveren in spoed" else False
 
-        quote_data = create_quote(printing_time_hours, filament_type, filament_weight_grams, number_of_prints, delivery_type, design_hours, travel_distance_km, urgent)
+        # Offerte data voor 1 print
+        single_quote_data = create_quote(printing_time_hours, filament_type, filament_weight_grams, 1, delivery_type, design_hours, travel_distance_km, urgent)
         
-        result_frame.quote_data = quote_data
-        display_generated_quote(quote_data, result_frame)
+        # Offerte data voor meerdere prints
+        total_quote_data = None
+        if multi_print and number_of_prints > 1:
+            total_quote_data = create_quote(printing_time_hours, filament_type, filament_weight_grams, number_of_prints, delivery_type, design_hours, travel_distance_km, urgent)
+        
+        # Display results
+        result_frame.quote_data = {
+            "single": single_quote_data,
+            "total": total_quote_data
+        }
+        display_generated_quote(result_frame.quote_data, result_frame)
 
     except Exception as e:
         logging.error(f"Fout bij het genereren van de offerte: {e}")
@@ -163,50 +184,48 @@ def load_offers_from_app():
         messagebox.showerror("Fout", f"Er is een fout opgetreden bij het laden van offertes: {e}")
         return []
 
-def view_offer(index):
-    """Bekijk een specifieke offerte."""
+def view_offer(index, frame, frames):
+    """Bekijk een specifieke offerte in het hoofdvenster."""
     offers = load_offers_from_app()
     selected_offer = offers[index]
 
     # Haal de gegevens uit de opgeslagen offerte
     offer_data = selected_offer.get('quote_data', {})
 
-    # Creëer een nieuw venster om de offerte weer te geven
-    view_window = Toplevel()
-    view_window.title(f"Offerte voor {selected_offer.get('customer_name', 'Onbekende klant')}")
+    # Maak het frame voor het bekijken van offertes leeg
+    for widget in frame.winfo_children():
+        widget.destroy()
 
-    frame = ttk.Frame(view_window, padding="20")
-    frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+    # Voeg een terug knop toe
+    ttk.Button(frame, text="Terug", command=lambda: show_frame(frames["history"])).pack(pady=10)
 
-    ttk.Label(frame, text="Offerte Details", font=("Arial", 14, "bold")).grid(column=0, row=0, columnspan=2, pady=10)
-
-    # Offerte details weergeven in labels
+    # Voeg de offerte details toe aan het frame
     details = [
         ("Filament Type", offer_data.get('filament_type', 'Onbekend')),
-        ("Prijs Filament / kg", f"€{round(offer_data.get('filament_price_per_kg', 0), 2)}"),
-        ("Droogkosten", f"€{round(offer_data.get('drying_cost', 0), 2)}"),
-        ("Huidige Elektriciteitsprijs", f"€{round(offer_data.get('electricity_price', 0), 2)} per kWh"),
-        ("Prijs van Elektriciteit voor Print", f"€{round(offer_data.get('electricity_cost', 0), 2)}"),
+        ("Prijs Filament / kg", f"€{offer_data.get('filament_price_per_kg', 0)}"),
+        ("Droogkosten", f"€{offer_data.get('drying_cost', 0)}"),
+        ("Huidige Elektriciteitsprijs", f"€{offer_data.get('electricity_price', 0)} per kWh"),
+        ("Prijs van Elektriciteit voor Print", f"€{offer_data.get('electricity_cost', 0)}"),
         ("Gewicht van Print", f"{offer_data.get('filament_weight_grams', 0)} gram"),
-        ("Printtijd", f"{int(offer_data.get('printing_time_hours', 0))} uur {int((offer_data.get('printing_time_hours', 0) * 60) % 60)} min"),
-        ("Leveringskosten", f"€{round(offer_data.get('delivery_cost', 0), 2)}"),
-        ("Ontwerpkosten", f"€{round(offer_data.get('design_cost', 0), 2)}"),
+        ("Printtijd", f"{offer_data.get('printing_time_hours', 0)} uur"),
+        ("Leveringskosten", f"€{offer_data.get('delivery_cost', 0)}"),
+        ("Ontwerpkosten", f"€{offer_data.get('design_cost', 0)}"),
         ("Ontwerptijd", f"{offer_data.get('design_hours', 0)} uur"),
-        ("Netto Prijs (zonder winst)", f"€{round(offer_data.get('netto_price', 0), 2)}"),
+        ("Netto Prijs (zonder winst)", f"€{offer_data.get('netto_price', 0)}"),
         ("Winstmarge", f"{settings['profit_margin']*100}%"),
-        ("Bedrag met Winst", f"€{round(offer_data.get('total_price', 0), 2)}"),
-        ("BTW Bedrag", f"€{round(offer_data.get('btw', 0), 2)}"),
-        ("Totaal Bedrag", f"€{round(offer_data.get('total_price_with_btw', 0), 2)}")
+        ("Bedrag met Winst", f"€{offer_data.get('total_price', 0)}"),
+        ("BTW Bedrag", f"€{offer_data.get('btw', 0)}"),
+        ("Totaal Bedrag", f"€{offer_data.get('total_price_with_btw', 0)}")
     ]
 
     for i, (label, value) in enumerate(details):
-        ttk.Label(frame, text=label, font=("Arial", 10, "bold")).grid(column=0, row=i+1, sticky=tk.W, pady=5)
-        ttk.Label(frame, text=value, font=("Arial", 10)).grid(column=1, row=i+1, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=label, font=("Arial", 10, "bold")).pack(anchor="w", pady=2)
+        ttk.Label(frame, text=value, font=("Arial", 10)).pack(anchor="w", pady=2)
 
-    # Voeg een "Sluiten" knop toe
-    ttk.Button(frame, text="Sluiten", command=view_window.destroy).grid(column=1, row=len(details)+1, pady=10, sticky=tk.E)
-
-def show_offer_history():
+    # Toon het offerte detail frame
+    show_frame(frame)
+    
+def show_offer_history(history_frame, show_frame, frames):
     """Toon een lijst van opgeslagen offertes."""
     offers = load_offers_from_app()
     if not offers:
@@ -215,7 +234,7 @@ def show_offer_history():
     def view_selected_offer():
         selection = listbox.curselection()
         if selection:
-            view_offer(selection[0])
+            view_offer(selection[0], history_frame, frames)
 
     def delete_offer(index):
         del offers[index]
@@ -223,20 +242,23 @@ def show_offer_history():
             json.dump(offers, file, indent=4)
         listbox.delete(index)
 
-    history_window = Toplevel()
-    history_window.title("Offertes")
+    # Zorg ervoor dat je het frame leegmaakt
+    for widget in history_frame.winfo_children():
+        widget.destroy()
 
-    listbox = Listbox(history_window)
+    # Voeg widgets opnieuw toe aan het history frame
+    listbox = tk.Listbox(history_frame)
     for i, offer in enumerate(offers):
         customer_name = offer.get('customer_name', 'Onbekende klant')
         date = offer.get('date', 'Geen datum beschikbaar')
         listbox.insert(tk.END, f"{customer_name} - {date}")
     listbox.grid(row=0, column=0, columnspan=2, sticky="nsew")
 
-    view_button = tk.Button(history_window, text="Bekijk Offerte", command=view_selected_offer)
-    view_button.grid(row=1, column=0, padx=5, pady=5)
+    view_button = tk.Button(history_frame, text="Bekijk Offerte", command=view_selected_offer)
+    view_button.grid(row=1, column=0, padx=5, pady=5, sticky="w")
 
-    delete_button = tk.Button(history_window, text="Verwijder Offerte", command=lambda: delete_offer(listbox.curselection()[0]))
-    delete_button.grid(row=1, column=1, padx=5, pady=5)
+    delete_button = tk.Button(history_frame, text="Verwijder Offerte", command=lambda: delete_offer(listbox.curselection()[0]))
+    delete_button.grid(row=1, column=1, padx=5, pady=5, sticky="e")
 
-    history_window.mainloop()
+    back_button = ttk.Button(history_frame, text="Terug", command=lambda: show_frame(frames["home"]))
+    back_button.grid(row=2, column=1, pady=10, sticky='e')
