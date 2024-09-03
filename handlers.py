@@ -95,7 +95,7 @@ def save_as_pdf(quote_data):
             logging.error(f"Fout bij het opslaan van de offerte als PDF: {e}")
             messagebox.showerror("Fout", f"Er is een fout opgetreden bij het opslaan van de offerte als PDF: {e}")
 
-def generate_quote(entry_print_hours, entry_print_minutes, entry_print_seconds, combo_filament_type, entry_filament_weight, entry_number_of_prints, combo_delivery_type, entry_design_hours, entry_design_minutes, entry_travel_distance, urgent_checkbox, result_frame, multi_print=False):
+def generate_quote(entry_print_hours, entry_print_minutes, entry_print_seconds, combo_filament_type, entry_filament_weight, entry_number_of_prints, combo_delivery_type, entry_design_hours, entry_design_minutes, entry_travel_distance, urgent_checkbox, result_frame):
     """Genereer een offerte gebaseerd op de invoer."""
     try:
         logging.info("Start van de generate_quote functie.")
@@ -113,7 +113,7 @@ def generate_quote(entry_print_hours, entry_print_minutes, entry_print_seconds, 
         )
         filament_type = combo_filament_type.get()
         filament_weight_grams = float(entry_filament_weight.get().replace(',', '.') or 0)
-        number_of_prints = int(entry_number_of_prints.get().replace(',', '.') or 1)  # Standaard naar 1 print
+        number_of_prints = int(entry_number_of_prints.get() or 1)  # Standaard naar 1 print
         delivery_type = combo_delivery_type.get()
         design_hours = (
             int(entry_design_hours.get() or 0) +
@@ -122,15 +122,33 @@ def generate_quote(entry_print_hours, entry_print_minutes, entry_print_seconds, 
         travel_distance_km = float(entry_travel_distance.get().replace(',', '.') or 0) if delivery_type in ["Zelf leveren", "Zelf leveren in spoed"] else 0
         urgent = urgent_checkbox.get() if delivery_type == "Zelf leveren in spoed" else False
 
-        # Offerte data voor 1 print
-        single_quote_data = create_quote(printing_time_hours, filament_type, filament_weight_grams, 1, delivery_type, design_hours, travel_distance_km, urgent)
+        # Bereken offerte voor 1 print
+        single_quote_data = create_quote(
+            printing_time_hours, 
+            filament_type, 
+            filament_weight_grams, 
+            1, 
+            delivery_type, 
+            design_hours, 
+            travel_distance_km, 
+            urgent
+        )
         
-        # Offerte data voor meerdere prints
+        # Bereken offerte voor meerdere prints
         total_quote_data = None
-        if multi_print and number_of_prints > 1:
-            total_quote_data = create_quote(printing_time_hours, filament_type, filament_weight_grams, number_of_prints, delivery_type, design_hours, travel_distance_km, urgent)
+        if number_of_prints > 1:
+            total_quote_data = create_quote(
+                printing_time_hours, 
+                filament_type, 
+                filament_weight_grams, 
+                number_of_prints, 
+                delivery_type, 
+                design_hours, 
+                travel_distance_km, 
+                urgent
+            )
         
-        # Display results
+        # Toon de resultaten
         result_frame.quote_data = {
             "single": single_quote_data,
             "total": total_quote_data
@@ -140,6 +158,28 @@ def generate_quote(entry_print_hours, entry_print_minutes, entry_print_seconds, 
     except Exception as e:
         logging.error(f"Fout bij het genereren van de offerte: {e}")
         tk.messagebox.showerror("Error", f"Er is een fout opgetreden: {e}")
+
+def display_generated_quote(quote_data, result_frame):
+    """Toont de gegenereerde offerte in het result_frame."""
+    # Verwijder alle bestaande widgets in result_frame
+    for widget in result_frame.winfo_children():
+        widget.destroy()
+
+    # Toon details voor 1 print
+    ttk.Label(result_frame, text="Offerte voor 1 Print", font=("Arial", 14, "bold")).pack(pady=10)
+    
+    single_quote_data = quote_data.get("single", {})
+    for key, value in single_quote_data.items():
+        ttk.Label(result_frame, text=f"{key}: {value}").pack(anchor="w")
+
+    # Toon details voor meerdere prints indien aanwezig
+    total_quote_data = quote_data.get("total", None)
+    if total_quote_data:
+        ttk.Label(result_frame, text="\nOfferte voor Meerdere Prints", font=("Arial", 14, "bold")).pack(pady=10)
+        for key, value in total_quote_data.items():
+            ttk.Label(result_frame, text=f"{key}: {value}").pack(anchor="w")
+
+
 
 def show_info():
     """Toon informatie over de applicatie."""

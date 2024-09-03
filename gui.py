@@ -100,8 +100,8 @@ def create_main_window():
     entry_print_seconds.grid(column=1, row=3, padx=(240, 0), sticky=tk.W)
     ttk.Label(quote_frame, text="sec").grid(column=1, row=3, padx=(300, 0), sticky=tk.W)
 
-    # Gewicht van 1 print
-    ttk.Label(quote_frame, text="Gewicht voor 1 print (gram):").grid(column=0, row=4, sticky=tk.W, pady=10)
+    # Gewicht van 3D print voor 1 print
+    ttk.Label(quote_frame, text="Gewicht van 3D print voor 1 print (gram):").grid(column=0, row=4, sticky=tk.W, pady=10)
     entry_filament_weight = ttk.Entry(quote_frame, validate="key", validatecommand=vcmd)
     entry_filament_weight.grid(column=1, row=4, sticky=tk.EW, pady=10)
 
@@ -148,7 +148,7 @@ def create_main_window():
     button_frame = ttk.Frame(quote_frame)
     button_frame.grid(column=0, row=10, columnspan=2, pady=20)
 
-    ttk.Button(button_frame, text="Genereer Offerte", command=lambda: generate_quote(entry_print_hours, entry_print_minutes, entry_print_seconds, combo_filament_type, entry_filament_weight, entry_number_of_prints, combo_delivery_type, entry_design_hours, entry_design_minutes, entry_travel_distance, urgent_checkbox, result_frame, multi_print=True)).grid(column=0, row=0, padx=10)
+    ttk.Button(button_frame, text="Genereer Offerte", command=lambda: generate_quote(entry_print_hours, entry_print_minutes, entry_print_seconds, combo_filament_type, entry_filament_weight, entry_number_of_prints, combo_delivery_type, entry_design_hours, entry_design_minutes, entry_travel_distance, urgent_checkbox, result_frame)).grid(column=0, row=0, padx=10)
 
     ttk.Button(button_frame, text="Sla Op Als PDF", command=lambda: save_as_pdf(result_frame.quote_data)).grid(column=1, row=0, padx=10)
 
