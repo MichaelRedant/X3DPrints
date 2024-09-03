@@ -1,6 +1,6 @@
 import os
 import tkinter as tk
-from tkinter import filedialog, messagebox, Toplevel, Listbox, ttk
+from tkinter import messagebox, Toplevel, filedialog, Listbox, ttk
 import json
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
@@ -20,19 +20,62 @@ def show_frame(frame):
         widget.grid_remove()  # Verberg alle frames
     frame.grid(row=0, column=0, sticky="nsew")  # Toon het geselecteerde frame
 
+def open_settings_window():
+    """Opent het venster voor instellingen."""
+    settings_window = Toplevel()
+    settings_window.title("Instellingen")
+
+    tk.Label(settings_window, text="Instellingen", font=("Arial", 14, "bold")).pack(pady=20)
+    
+    # Voeg hier je instellingen toe
+    tk.Label(settings_window, text="Voorbeeldinstelling:").pack(anchor="w", pady=5)
+    tk.Entry(settings_window).pack(anchor="w", pady=5)
+
+    tk.Button(settings_window, text="Opslaan", command=lambda: settings_window.destroy()).pack(pady=10)
+
+def show_info():
+    """Toon informatie over de applicatie."""
+    info_window = Toplevel()
+    info_window.title("Over deze applicatie")
+    info_text = tk.Text(info_window, wrap="word", height=10, width=50, background="#ffffff", borderwidth=0)
+    info_text.grid(padx=10, pady=10)
+
+    info_message = (
+        "Deze applicatie is ontwikkeld door Michaël Redant van Xinudesign in 2024.\n"
+        "Voor meer informatie over zijn werk, kunt u terecht op de website "
+        "<a href='https://www.xinudesign.be'>Xinudesign.be</a>.\n\n"
+        "Deze specifieke applicatie is gemaakt voor X3DPrints en biedt op maat gemaakte "
+        "3D-printoplossingen. Bezoek hun website op <a href='https://www.x3dprints.be'>X3DPrints.be</a> "
+        "voor meer details over hun diensten en producten."
+    )
+
+    def open_url(event):
+        webbrowser.open_new(event.widget.cget("text"))
+
+    info_text.insert(tk.END, info_message)
+    info_text.tag_add("url", "1.49", "1.69")
+    info_text.tag_add("url2", "3.77", "3.99")
+    info_text.tag_config("url", foreground="blue", underline=True)
+    info_text.tag_config("url2", foreground="blue", underline=True)
+    info_text.tag_bind("url", "<Button-1>", open_url)
+    info_text.tag_bind("url2", "<Button-1>", open_url)
+
 def update_design_time_visibility(combo_design_choice, design_frame):
-    """Zorg ervoor dat het ontwerptijd-frame alleen zichtbaar is als 'Eigen ontwerp' is geselecteerd."""
+    """Past de zichtbaarheid van het ontwerp tijdveld aan op basis van de ontwerp keuze."""
     if combo_design_choice.get() == "Eigen ontwerp":
         design_frame.grid()
     else:
         design_frame.grid_remove()
 
 def update_delivery_related_fields(combo_delivery_type, travel_distance_label, entry_travel_distance, urgent_checkbox):
-    """Pas de zichtbaarheid van leveringsgerelateerde velden aan op basis van het geselecteerde leveringsoptie."""
+    """Past de zichtbaarheid van leveringsgerelateerde velden aan op basis van het leverings type."""
     if combo_delivery_type.get() in ["Zelf leveren", "Zelf leveren in spoed"]:
         travel_distance_label.grid()
         entry_travel_distance.grid()
-        urgent_checkbox.grid()
+        if combo_delivery_type.get() == "Zelf leveren in spoed":
+            urgent_checkbox.grid()
+        else:
+            urgent_checkbox.grid_remove()
     else:
         travel_distance_label.grid_remove()
         entry_travel_distance.grid_remove()
@@ -101,9 +144,9 @@ def generate_quote(entry_print_hours, entry_print_minutes, entry_print_seconds, 
         logging.info("Start van de generate_quote functie.")
         
         # Validatie van invoervelden
-        fields_to_validate = [entry_print_hours, entry_print_minutes, entry_print_seconds, combo_filament_type, entry_filament_weight]
+        fields_to_validate = [entry_print_hours, entry_print_minutes, entry_print_seconds, combo_filament_type, entry_filament_weight, entry_number_of_prints, combo_delivery_type]
         if not validate_fields(*fields_to_validate):
-            messagebox.showerror("Fout", "Alle verplichte velden voor 1 print moeten worden ingevuld.")
+            messagebox.showerror("Fout", "Alle verplichte velden moeten worden ingevuld.")
             return
         
         printing_time_hours = (
@@ -113,7 +156,7 @@ def generate_quote(entry_print_hours, entry_print_minutes, entry_print_seconds, 
         )
         filament_type = combo_filament_type.get()
         filament_weight_grams = float(entry_filament_weight.get().replace(',', '.') or 0)
-        number_of_prints = int(entry_number_of_prints.get() or 1)  # Standaard naar 1 print
+        number_of_prints = int(entry_number_of_prints.get().replace(',', '.') or 0)
         delivery_type = combo_delivery_type.get()
         design_hours = (
             int(entry_design_hours.get() or 0) +
@@ -122,91 +165,21 @@ def generate_quote(entry_print_hours, entry_print_minutes, entry_print_seconds, 
         travel_distance_km = float(entry_travel_distance.get().replace(',', '.') or 0) if delivery_type in ["Zelf leveren", "Zelf leveren in spoed"] else 0
         urgent = urgent_checkbox.get() if delivery_type == "Zelf leveren in spoed" else False
 
-        # Bereken offerte voor 1 print
-        single_quote_data = create_quote(
-            printing_time_hours, 
-            filament_type, 
-            filament_weight_grams, 
-            1, 
-            delivery_type, 
-            design_hours, 
-            travel_distance_km, 
-            urgent
-        )
+        # Offerte voor 1 print
+        quote_data_single = create_quote(printing_time_hours, filament_type, filament_weight_grams, 1, delivery_type, design_hours, travel_distance_km, urgent)
+        # Offerte voor meerdere prints
+        quote_data_multiple = create_quote(printing_time_hours, filament_type, filament_weight_grams, number_of_prints, delivery_type, design_hours, travel_distance_km, urgent)
         
-        # Bereken offerte voor meerdere prints
-        total_quote_data = None
-        if number_of_prints > 1:
-            total_quote_data = create_quote(
-                printing_time_hours, 
-                filament_type, 
-                filament_weight_grams, 
-                number_of_prints, 
-                delivery_type, 
-                design_hours, 
-                travel_distance_km, 
-                urgent
-            )
-        
-        # Toon de resultaten
         result_frame.quote_data = {
-            "single": single_quote_data,
-            "total": total_quote_data
+            "single_print": quote_data_single,
+            "multiple_prints": quote_data_multiple,
         }
+        
         display_generated_quote(result_frame.quote_data, result_frame)
 
     except Exception as e:
         logging.error(f"Fout bij het genereren van de offerte: {e}")
         tk.messagebox.showerror("Error", f"Er is een fout opgetreden: {e}")
-
-def display_generated_quote(quote_data, result_frame):
-    """Toont de gegenereerde offerte in het result_frame."""
-    # Verwijder alle bestaande widgets in result_frame
-    for widget in result_frame.winfo_children():
-        widget.destroy()
-
-    # Toon details voor 1 print
-    ttk.Label(result_frame, text="Offerte voor 1 Print", font=("Arial", 14, "bold")).pack(pady=10)
-    
-    single_quote_data = quote_data.get("single", {})
-    for key, value in single_quote_data.items():
-        ttk.Label(result_frame, text=f"{key}: {value}").pack(anchor="w")
-
-    # Toon details voor meerdere prints indien aanwezig
-    total_quote_data = quote_data.get("total", None)
-    if total_quote_data:
-        ttk.Label(result_frame, text="\nOfferte voor Meerdere Prints", font=("Arial", 14, "bold")).pack(pady=10)
-        for key, value in total_quote_data.items():
-            ttk.Label(result_frame, text=f"{key}: {value}").pack(anchor="w")
-
-
-
-def show_info():
-    """Toon informatie over de applicatie."""
-    info_window = Toplevel()
-    info_window.title("Over deze applicatie")
-    info_text = tk.Text(info_window, wrap="word", height=10, width=50, background="#ffffff", borderwidth=0)
-    info_text.grid(padx=10, pady=10)
-
-    info_message = (
-        "Deze applicatie is ontwikkeld door Michaël Redant van Xinudesign in 2024.\n"
-        "Voor meer informatie over zijn werk, kunt u terecht op de website "
-        "<a href='https://www.xinudesign.be'>Xinudesign.be</a>.\n\n"
-        "Deze specifieke applicatie is gemaakt voor X3DPrints en biedt op maat gemaakte "
-        "3D-printoplossingen. Bezoek hun website op <a href='https://www.x3dprints.be'>X3DPrints.be</a> "
-        "voor meer details over hun diensten en producten."
-    )
-
-    def open_url(event):
-        webbrowser.open_new(event.widget.cget("text"))
-
-    info_text.insert(tk.END, info_message)
-    info_text.tag_add("url", "1.49", "1.69")
-    info_text.tag_add("url2", "3.77", "3.99")
-    info_text.tag_config("url", foreground="blue", underline=True)
-    info_text.tag_config("url2", foreground="blue", underline=True)
-    info_text.tag_bind("url", "<Button-1>", open_url)
-    info_text.tag_bind("url2", "<Button-1>", open_url)
 
 def load_offers_from_app():
     """Laad de opgeslagen offertes uit het bestand."""
@@ -264,7 +237,7 @@ def view_offer(index, frame, frames):
 
     # Toon het offerte detail frame
     show_frame(frame)
-    
+
 def show_offer_history(history_frame, show_frame, frames):
     """Toon een lijst van opgeslagen offertes."""
     offers = load_offers_from_app()
