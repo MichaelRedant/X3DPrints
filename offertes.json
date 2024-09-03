@@ -1,0 +1,43 @@
+[
+    {
+        "customer_name": "test",
+        "quote_data": {
+            "filament_type": "TPU",
+            "filament_price_per_kg": 25.5,
+            "drying_cost": 5.0812,
+            "electricity_price": 0.23,
+            "electricity_cost": 0.4983333333333333,
+            "filament_weight_grams": 88.0,
+            "printing_time_hours": 2.1666666666666665,
+            "delivery_cost": 0,
+            "design_cost": 0.0,
+            "design_hours": 0.0,
+            "netto_price": 7.3252,
+            "total_price": 11.735299999999999,
+            "btw": 2.4644129999999995,
+            "total_price_with_btw": 14.199713
+        },
+        "date": "2024-09-03 10:48:18"
+    },
+    {
+        "customer_name": "tost",
+        "quote_data": {
+            "filament_type": "PETG",
+            "filament_price_per_kg": 23.38,
+            "drying_cost": 5.0812,
+            "drying_electricity_cost": 1.84,
+            "electricity_price": 0.23,
+            "electricity_cost": 0.30666666666666664,
+            "filament_weight_grams": 80.0,
+            "printing_time_hours": 1.3333333333333333,
+            "delivery_cost": 0,
+            "design_cost": 0.0,
+            "design_hours": 0.0,
+            "netto_price": 3.7104,
+            "total_price": 13.647400000000001,
+            "btw": 2.8659540000000003,
+            "total_price_with_btw": 16.513354
+        },
+        "date": "2024-09-03 11:18:02"
+    }
+]

@@ -1,0 +1,13 @@
+2024-09-03 09:09:47,556 - ERROR - Fout bij het genereren van de offerte: ''
+2024-09-03 09:10:04,953 - ERROR - Fout bij het opslaan van de offerte: 'Frame' object has no attribute 'get'
+2024-09-03 09:25:10,752 - ERROR - Fout bij het maken van de offerte: ''
+2024-09-03 09:25:10,767 - ERROR - Fout bij het genereren van de offerte: ''
+2024-09-03 09:25:27,625 - ERROR - Fout bij het genereren van de offerte: Invalid format specifier ':.2f' for object of type 'float'
+2024-09-03 09:25:37,048 - ERROR - Fout bij het opslaan van de offerte: Object of type Frame is not JSON serializable
+2024-09-03 09:29:00,312 - ERROR - Fout bij het opslaan van de offerte: Expecting value: line 4 column 23 (char 63)
+2024-09-03 09:39:57,560 - ERROR - Fout bij het opslaan van de offerte: Object of type Frame is not JSON serializable
+2024-09-03 10:04:53,093 - ERROR - Fout bij het laden van offertes: Expecting value: line 4 column 23 (char 65)
+2024-09-03 10:13:28,689 - ERROR - Fout bij het maken van de offerte: ''
+2024-09-03 10:13:28,689 - ERROR - Fout bij het genereren van de offerte: ''
+2024-09-03 10:14:10,896 - ERROR - Fout bij het opslaan van de offerte: Object of type Frame is not JSON serializable
+2024-09-03 10:15:30,175 - ERROR - Fout bij het laden van offertes: Expecting value: line 24 column 23 (char 781)
